@@ -9,6 +9,7 @@ expression. It is a thin, fluent layer over pandas — when you need the full
 power of pandas, call `.to_df()` and drop straight back into it.
 
 ![CI](https://github.com/Shivmahlan/dcleaner/actions/workflows/ci.yml/badge.svg)
+[![OpenSSF Best Practices](https://img.shields.io/badge/OpenSSF-baseline-blue)](https://www.bestpractices.dev/)
 
 ---
 
