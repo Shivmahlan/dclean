@@ -1,4 +1,5 @@
 """Core fluent DataFrame wrapper for dclean."""
+import os
 import re
 import pandas as pd
 import matplotlib
@@ -38,7 +39,20 @@ class Data:
 
     # ---------------------------------------------------------------- LOAD
     @staticmethod
+    def _sample_path(name):
+        """Resolve a bare filename against the bundled sample datasets."""
+        here = os.path.dirname(os.path.abspath(__file__))
+        cand = os.path.join(here, "data", name)
+        return cand if os.path.exists(cand) else None
+
+    @staticmethod
     def _load(path):
+        # Bare name (no directory) that isn't on disk -> try bundled samples,
+        # so `Data("sample_sales.csv")` works after a plain `pip install`.
+        if os.sep not in str(path) and not os.path.exists(path):
+            bundled = Data._sample_path(path)
+            if bundled:
+                path = bundled
         if path.endswith(".csv") or path.endswith(".csv.gz"):
             return pd.read_csv(path)
         if path.endswith((".xls", ".xlsx")):

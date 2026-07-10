@@ -71,7 +71,9 @@ With `dclean`, every step returns the object itself, so you chain:
 ```python
 from dclean import Data
 
-result = (Data("sales.csv")
+# A sample dataset ships with the library, so this works right after
+# `pip install dcleaner` — no file downloads needed:
+result = (Data("sample_sales.csv")
     .dropna()
     .filter("age > 18 and city in ['NY', 'LA']")
     .groupby("city").agg("mean", "salary")
