@@ -1,12 +1,14 @@
-# dclean
+# dcleaner
 
 **Fluent, low-boilerplate data cleaning and visualization — built on top of pandas.**
 
 Tired of writing the same `df.dropna().query(...).groupby(...).plot()` boilerplate
-every time you explore a dataset? `dclean` wraps pandas in a chainable, readable
+every time you explore a dataset? `dcleaner` wraps pandas in a chainable, readable
 API so a full **load → clean → filter → aggregate → plot** pipeline is one
 expression. It is a thin, fluent layer over pandas — when you need the full
 power of pandas, call `.to_df()` and drop straight back into it.
+
+![CI](https://github.com/Shivmahlan/dclean/actions/workflows/ci.yml/badge.svg)
 
 ---
 
@@ -39,6 +41,11 @@ pip install dcleaner
 
 Requirements: Python ≥ 3.8, plus `pandas`, `matplotlib`, and `numpy`
 (automatically installed as dependencies).
+
+## Try it
+
+A self-contained demo notebook lives at [`examples/demo.ipynb`](examples/demo.ipynb) —
+it generates its own data and walks through clean → filter → aggregate → plot.
 
 ---
 
