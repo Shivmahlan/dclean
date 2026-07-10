@@ -34,7 +34,7 @@ power of pandas, call `.to_df()` and drop straight back into it.
 ## Install
 
 ```bash
-pip install dclean
+pip install dcleaner
 ```
 
 Requirements: Python ≥ 3.8, plus `pandas`, `matplotlib`, and `numpy`
