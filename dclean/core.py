@@ -94,8 +94,8 @@ class Data:
         self.df = self.df.drop(columns=cols)
         return self
 
-    def keep(self, cols):
-        cols = [cols] if isinstance(cols, str) else list(cols)
+    def keep(self, *cols):
+        cols = [c for c in cols if isinstance(c, str)]
         self.df = self.df[cols]
         return self
 
@@ -122,12 +122,19 @@ class Data:
 
         Supports: == != > < >= <= and or in not in
         e.g.  filter("age > 18 and city in ['NY','LA']")
-        Columns with spaces must be quoted: filter("'total sales' > 100")
+        Also supports a SQL-style `between`: filter("score between 70 and 100")
+        resolves to score >= 70 and score <= 100.
+        Columns with spaces must use backticks: filter("`total sales` > 100")
         """
         self.df = self.df[self._eval_expr(expr)]
         return self
 
     def _eval_expr(self, expr):
+        # SQL-style `between x and y` -> `x >= lo and x <= hi`
+        m = re.match(r"^\s*(.+?)\s+between\s+(.+?)\s+and\s+(.+?)\s*$", expr, re.IGNORECASE)
+        if m:
+            col, lo, hi = m.group(1), m.group(2), m.group(3)
+            expr = f"({col} >= {lo} and {col} <= {hi})"
         try:
             return self.df.eval(expr)
         except Exception:

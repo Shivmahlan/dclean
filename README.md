@@ -170,10 +170,11 @@ d.filter("status != 'inactive'")
 d.filter("score between 70 and 100")   # pandas eval supports between
 ```
 
-Columns whose names contain spaces must be quoted inside the string:
+Columns whose names contain spaces must use backticks (standard
+`pandas.eval()` / `.query()` syntax):
 
 ```python
-d.filter("'total sales' > 100")
+d.filter("`total sales` > 100")
 ```
 
 Under the hood `filter()` uses `DataFrame.eval()` (falling back to

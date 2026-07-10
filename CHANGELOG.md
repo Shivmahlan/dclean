@@ -4,6 +4,19 @@ All notable changes to `dcleaner` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.2] - 2026-07-10
+
+### Fixed
+- `keep(*cols)` now accepts multiple positional column names (e.g.
+  `.keep("name", "price")`), matching `select(*cols)` — previously required a
+  list.
+- `filter("x between lo and hi")` is now supported (SQL-style `between`),
+  rewritten to `x >= lo and x <= hi`.
+- Spaced column names in `filter()` documented with backticks
+  (`` d.filter("`total sales` > 100") ``); single quotes compared a string
+  literal and raised. Single quotes already worked for string equality on
+  normal columns (e.g. `city == 'NY'`).
+
 ## [0.1.1] - 2026-07-10
 
 ### Added
