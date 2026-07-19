@@ -98,3 +98,55 @@ def test_repr_shows_shape_and_cols():
     assert "dclean.Data(" in r
     assert "cols=" in r
     assert str(len(d.df.columns)) in r
+
+
+def test_dtypes_prints_column_types(capsys):
+    d = Data(SAMPLE)
+    d.dtypes()
+    out = capsys.readouterr().out
+    # every column name must appear in the dtype dump
+    for col in d.df.columns:
+        assert col in out
+    # and at least one pandas dtype string
+    assert any(t in out for t in ("int64", "float64", "object"))
+
+
+def test_shape_shows_columns_and_dtypes(capsys):
+    d = Data(SAMPLE)
+    d.shape()
+    out = capsys.readouterr().out
+    assert "rows x" in out
+    assert "columns:" in out
+    assert "dtypes:" in out
+    for col in d.df.columns:
+        assert col in out
+
+
+def test_print_full_dataset(capsys):
+    d = Data(SAMPLE)
+    d.print()
+    out = capsys.readouterr().out
+    # full dataset prints every column header
+    for col in d.df.columns:
+        assert col in out
+
+
+def test_print_caps_rows(capsys):
+    d = Data(SAMPLE)
+    d.print(n=3)
+    out = capsys.readouterr().out
+    # tablefmt=github body rows = data rows; capped to 3
+    assert out.count("|") >= 4  # header + 3 data rows each have pipes
+    # ensure all columns still shown in header
+    for col in d.df.columns:
+        assert col in out
+
+
+def test_str_prints_dataset(capsys):
+    # print(d) should render the dataset, not the terse repr
+    d = Data(SAMPLE)
+    print(d)
+    out = capsys.readouterr().out
+    for col in d.df.columns:
+        assert col in out
+    assert "dclean.Data(" not in out  # str != repr

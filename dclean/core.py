@@ -18,7 +18,6 @@ except ImportError:  # pragma: no cover - optional dependency
         showindex = kwargs.get("showindex", True)
         return df.to_string(index=bool(showindex))
 
-
 class Data:
     """Fluent wrapper around a pandas DataFrame.
 
@@ -26,11 +25,11 @@ class Data:
 
         from dclean import Data
         (Data("sales.csv")
-            .dropna()
-            .filter("age > 18")
-            .groupby("city").agg("mean", "salary")
-            .plot("bar", x="city", y="salary")
-            .show())
+         .dropna()
+         .filter("age > 18")
+         .groupby("city").agg("mean", "salary")
+         .plot("bar", x="city", y="salary")
+         .show())
 
     Drop back to raw pandas anytime with ``.to_df()``.
     """
@@ -49,7 +48,7 @@ class Data:
         self._group = None
         self._fig = None
 
-    # ---------------------------------------------------------------- LOAD
+    # ----------------------------------------------------------- LOAD
     @staticmethod
     def _sample_path(name):
         """Resolve a bare filename against the bundled sample datasets."""
@@ -80,7 +79,7 @@ class Data:
         """Build from a list of dicts."""
         return cls(df=pd.DataFrame(records))
 
-    # -------------------------------------------------------------- INSPECT
+    # ----------------------------------------------------------- INSPECT
     def head(self, n=5):
         print(tabulate(self.df.head(n), headers="keys", tablefmt="github",
                        showindex=False))
@@ -102,12 +101,55 @@ class Data:
         print(tabulate(df, headers="keys", tablefmt="github", showindex=False))
         return self
 
+    def print(self, n=None):
+        """Print the dataset itself (chainable).
+
+        No argument -> print the FULL frame. Pass ``n`` to cap to the first
+        ``n`` rows (like head()). Returns ``self`` so it can sit inside a
+        pipeline, e.g. dump the cleaned data right before exporting it::
+
+            (Data("sales.csv")
+             .dropna()
+             .print()                 # dump the cleaned data to stdout
+             .filter("age > 18")
+             .to_csv("out.csv"))
+
+        For a quick look at just the head, use ``.head()`` instead.
+        """
+        df = self.df if n is None else self.df.head(n)
+        print(tabulate(df, headers="keys", tablefmt="github", showindex=False))
+        return self
+
     def info(self):
         self.df.info()
         return self
 
     def shape(self):
+        """Print the shape, the column list, and each feature's dtype.
+
+        (Previously this only printed ``N rows x M cols`` — which overlapped
+        with ``repr(Data)``. Now it also surfaces columns and dtypes, so it
+        is the one-stop shape+type inspector.)
+        """
         print(f"{self.df.shape[0]} rows x {self.df.shape[1]} cols")
+        print("columns:", list(self.df.columns))
+        print("dtypes:")
+        print(self.df.dtypes.to_string())
+        return self
+
+    def dtypes(self):
+        """Print each feature's data type (a tidy ``column -> dtype`` list).
+
+        Example output::
+
+            city    object
+            age      int64
+            salary  float64
+            score     int64
+
+        For just the raw pandas Series, use ``.to_df().dtypes``.
+        """
+        print(self.df.dtypes.to_string())
         return self
 
     def cols(self):
@@ -130,7 +172,7 @@ class Data:
             print(f"\033[1m→ mean | {callout}\033[0m\n")
         return self
 
-    # --------------------------------------------------------------- CLEAN
+    # ----------------------------------------------------------- CLEAN
     def dropna(self, subset=None):
         self.df = self.df.dropna(subset=subset)
         return self
@@ -202,15 +244,15 @@ class Data:
             self.df[c] = pd.to_numeric(self.df[c], errors="coerce")
         return self
 
-    # -------------------------------------------------------------- FILTER
+    # ----------------------------------------------------------- FILTER
     def filter(self, expr):
         """Filter with a readable expression string.
 
         Supports: == != > < >= <= and or in not in
-        e.g.  filter("age > 18 and city in ['NY','LA']")
+        e.g. filter("age > 18 and city in ['NY','LA']")
         Also supports a SQL-style `between`: filter("score between 70 and 100")
         resolves to score >= 70 and score <= 100.
-        Columns with spaces must use backticks: filter("`total sales` > 100")
+        Columns with spaces must use back-ticks: filter("`total sales` > 100")
         """
         self.df = self.df[self._eval_expr(expr)]
         return self
@@ -296,7 +338,7 @@ class Data:
         self._fig = fig
         return self
 
-    # ------------------------------------------------------------ VISUALIZE
+    # ----------------------------------------------------------- VISUALIZE
     def plot(self, kind="line", x=None, y=None, title=None, **kwargs):
         """One-liner plot. kind: line|bar|hist|scatter|box|pie"""
         fig, ax = plt.subplots(figsize=(8, 5))
@@ -330,7 +372,7 @@ class Data:
             raise RuntimeError("No figure to save. Call plot()/plot_corr() first.")
         return self
 
-    # --------------------------------------------------------------- EXPORT
+    # ----------------------------------------------------------- EXPORT
     def to_csv(self, path):
         self.df.to_csv(path, index=False)
         print(f"saved -> {path}")
@@ -341,6 +383,10 @@ class Data:
         return self.df
 
     # ----------------------------------------------------------- DUNDERS
+    def __str__(self):
+        """`print(d)` shows the full dataset (not just the terse repr)."""
+        return tabulate(self.df, headers="keys", tablefmt="github", showindex=False)
+
     def __repr__(self):
         cols = ", ".join(map(str, self.df.columns)) if len(self.df.columns) else "-"
         return f"dclean.Data({self.df.shape[0]}×{self.df.shape[1]}, cols=[{cols}])"

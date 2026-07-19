@@ -129,13 +129,16 @@ d = Data("sales.csv")
 d.head()            # first 5 rows
 d.head(10)          # first 10 rows
 d.tail()            # last 5 rows
-d.shape()           # prints "N rows x M cols"
+d.print()           # print the FULL dataset (chainable)
+d.print(10)         # print first 10 rows
+d.to_table()        # print the FULL dataset as a tidy table
+print(d)            # prints the dataset table (str); repr stays terse
+d.shape()           # prints "N rows x M cols" + columns + dtypes
+d.dtypes()          # prints each feature's dtype (column -> type)
 d.cols()            # prints the column list
-d.info()            # pandas .info()
+d.info()            # pandas .info()  (incl. per-column dtypes)
 d.describe()        # highlighted summary stats of numeric columns
 d.nulls()           # missing-value counts per column (+ total)
-d.to_table()        # print the FULL dataset as a tidy table
-print(d)            # dclean.Data(60×4, cols=[city, age, salary, score])
 ```
 
 ---
@@ -328,7 +331,7 @@ for anything `dclean` doesn't wrap yet.
 |------|--------|-------|
 | Load file | `Data("file.csv")` | auto-detects csv/xls/xlsx/json/parquet |
 | From frame | `Data(df)` / `Data.from_records([...])` | |
-| Inspect | `.head(n)` `.tail(n)` `.to_table([max_rows])` `.shape()` `.cols()` `.info()` `.describe()` `.nulls([plot])` | print helpers |
+| Inspect | `.head(n)` `.tail(n)` `.print([n])` `.to_table([max_rows])` `.shape()` `.dtypes()` `.cols()` `.info()` `.describe()` `.nulls([plot])` | `print(d)` renders the dataset; `repr(d)` stays terse. `.shape()` and `.dtypes()` show per-feature types |
 | Clean | `.dropna([subset])` `.fillna(v)` `.dedupe([subset])` `.drop(c)` `.keep(*c)` `.rename(a=b)` `.lower_cols()` `.astype(a="t")` `.to_float(*cols)` | `.to_float()` coerces obj→float, unparseable→NaN |
 | Filter | `.filter("expr")` | `== != > < >= <= and or in not in` + `between` |
 | Transform | `.mutate(x="expr")` `.select(*c)` `.sort(by, [ascending])` | |
