@@ -132,8 +132,10 @@ d.tail()            # last 5 rows
 d.shape()           # prints "N rows x M cols"
 d.cols()            # prints the column list
 d.info()            # pandas .info()
-d.describe()        # summary stats of numeric columns
-print(d)            # Data(shape=(N, M))  — or just .show() to print the frame
+d.describe()        # highlighted summary stats of numeric columns
+d.nulls()           # missing-value counts per column (+ total)
+d.to_table()        # print the FULL dataset as a tidy table
+print(d)            # dclean.Data(60×4, cols=[city, age, salary, score])
 ```
 
 ---
@@ -152,11 +154,20 @@ print(d)            # Data(shape=(N, M))  — or just .show() to print the frame
     .keep("name", "price")    # keep ONLY these columns
     .rename(price="cost")     # rename a column
     .lower_cols()             # lowercase ALL column names (great first step)
-    .astype(price="float"))   # cast types
+    .astype(price="float")    # cast types
+    .to_float("price", "qty") # convert string/object cols to float (errors→NaN)
+    .nulls()                  # show missing-value counts per column
 ```
 
 > Tip: start every pipeline with `.lower_cols()` so you never have to remember
 > whether a column is `Price`, `price`, or `PRICE`.
+
+To spot dirty data fast, chain `.nulls()` right before `.dropna()` — it prints
+a per-column null count and the grand total:
+
+```python
+(Data("sales.csv").nulls())   # → total nulls: N across M rows
+```
 
 ---
 
@@ -317,9 +328,9 @@ for anything `dclean` doesn't wrap yet.
 |------|--------|-------|
 | Load file | `Data("file.csv")` | auto-detects csv/xls/xlsx/json/parquet |
 | From frame | `Data(df)` / `Data.from_records([...])` | |
-| Inspect | `.head(n)` `.tail(n)` `.shape()` `.cols()` `.info()` `.describe()` | print helpers |
-| Clean | `.dropna([subset])` `.fillna(v)` `.dedupe([subset])` `.drop(c)` `.keep(c)` `.rename(a=b)` `.lower_cols()` `.astype(a="t")` | |
-| Filter | `.filter("expr")` | `== != > < >= <= and or in not in` |
+| Inspect | `.head(n)` `.tail(n)` `.to_table([max_rows])` `.shape()` `.cols()` `.info()` `.describe()` `.nulls([plot])` | print helpers |
+| Clean | `.dropna([subset])` `.fillna(v)` `.dedupe([subset])` `.drop(c)` `.keep(*c)` `.rename(a=b)` `.lower_cols()` `.astype(a="t")` `.to_float(*cols)` | `.to_float()` coerces obj→float, unparseable→NaN |
+| Filter | `.filter("expr")` | `== != > < >= <= and or in not in` + `between` |
 | Transform | `.mutate(x="expr")` `.select(*c)` `.sort(by, [ascending])` | |
 | Aggregate | `.groupby(*c).agg(how, col)` `.summarize(**stats)` `.corr([method])` | |
 | Plot | `.plot(kind, x, y, [title])` `.plot_corr([title])` | line/bar/hist/scatter/box/pie |
@@ -327,7 +338,8 @@ for anything `dclean` doesn't wrap yet.
 
 All transform/clean/aggregate methods return `self`, so they chain. Inspect
 and output methods also return `self` unless they hand back a value
-(`.to_df()`, `len(d)`, `repr(d)`).
+(`.to_df()`, `len(d)`, `repr(d)`). `head()`/`tail()`/`to_table()` render clean
+GitHub-style tables with **every column shown** (no `...` truncation).
 
 ---
 

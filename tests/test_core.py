@@ -62,3 +62,39 @@ def test_to_df_returns_pandas():
     raw = d.to_df()
     assert isinstance(raw, pd.DataFrame)
     assert raw.shape == d.df.shape
+
+
+def test_nulls_reports_total(capsys):
+    d = Data(SAMPLE).dropna()
+    d.nulls()
+    out = capsys.readouterr().out
+    assert "total nulls" in out
+
+
+def test_to_float_coerces(monkeypatch):
+    # Build a frame with a string-number column and a clean one.
+    d = Data.from_records([
+        {"x": "1.5", "y": "2"},
+        {"x": "bad", "y": "3"},
+    ])
+    d.to_float("x", "y")
+    assert pd.api.types.is_float_dtype(d.df["x"])
+    assert pd.isna(d.df["x"].iloc[1])   # "bad" -> NaN
+    assert d.df["y"].iloc[1] == 3.0
+
+
+def test_to_table_prints_all_columns(capsys):
+    d = Data(SAMPLE)
+    d.to_table()
+    out = capsys.readouterr().out
+    # every column header should appear in the printed table
+    for col in d.df.columns:
+        assert col in out
+
+
+def test_repr_shows_shape_and_cols():
+    d = Data(SAMPLE)
+    r = repr(d)
+    assert "dclean.Data(" in r
+    assert "cols=" in r
+    assert str(len(d.df.columns)) in r

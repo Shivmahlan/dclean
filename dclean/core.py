@@ -6,6 +6,18 @@ import matplotlib
 matplotlib.use("Agg")  # headless-safe; plots still save/show in notebooks
 import matplotlib.pyplot as plt
 
+# Show every column (no "..." truncation) on any raw pandas print.
+pd.set_option("display.max_columns", None)
+pd.set_option("display.width", 200)
+pd.set_option("display.max_colwidth", 40)
+
+try:  # tabulate gives clean, non-truncated tables; fall back gracefully
+    from tabulate import tabulate
+except ImportError:  # pragma: no cover - optional dependency
+    def tabulate(df, **kwargs):
+        showindex = kwargs.get("showindex", True)
+        return df.to_string(index=bool(showindex))
+
 
 class Data:
     """Fluent wrapper around a pandas DataFrame.
@@ -70,11 +82,24 @@ class Data:
 
     # -------------------------------------------------------------- INSPECT
     def head(self, n=5):
-        print(self.df.head(n))
+        print(tabulate(self.df.head(n), headers="keys", tablefmt="github",
+                       showindex=False))
         return self
 
     def tail(self, n=5):
-        print(self.df.tail(n))
+        print(tabulate(self.df.tail(n), headers="keys", tablefmt="github",
+                       showindex=False))
+        return self
+
+    def to_table(self, max_rows=None):
+        """Render the FULL dataset as a formatted table (no column truncation).
+
+        Pass ``max_rows`` to cap the number of printed rows — every column is
+        always shown. Useful when ``head()`` / ``tail()`` only show part of the
+        data and you want the whole thing on screen.
+        """
+        df = self.df if max_rows is None else self.df.head(max_rows)
+        print(tabulate(df, headers="keys", tablefmt="github", showindex=False))
         return self
 
     def info(self):
@@ -90,8 +115,19 @@ class Data:
         return self
 
     def describe(self):
-        """Pretty summary of numeric columns."""
-        print(self.df.describe())
+        """Pretty, highlighted summary of numeric columns.
+
+        Prints a banner + a tidy table, then calls out the headline statistic
+        (the **mean**) per column so the main description jumps out at a glance.
+        """
+        desc = self.df.describe()
+        print("\n\033[1m\033[4mDESCRIPTIVE STATISTICS (numeric columns)\033[0m")
+        print(tabulate(desc, headers="keys", tablefmt="github",
+                       showindex=True, floatfmt=".3f"))
+        means = desc.loc["mean"].to_dict()
+        if means:
+            callout = ", ".join(f"{k}: {v:.3f}" for k, v in means.items())
+            print(f"\033[1m→ mean | {callout}\033[0m\n")
         return self
 
     # --------------------------------------------------------------- CLEAN
@@ -128,6 +164,42 @@ class Data:
     def lower_cols(self):
         """Rename all columns to lowercase (common cleaning step)."""
         self.df = self.df.rename(columns={c: str(c).lower() for c in self.df.columns})
+        return self
+
+    def nulls(self, plot=False):
+        """Show missing-value counts per column (and the total).
+
+        Returns ``self`` so it can sit in a chain right before ``.dropna()``.
+        Set ``plot=True`` to also render a bar chart of the null counts
+        (finish with ``.savefig()`` / ``.show()``).
+        """
+        counts = self.df.isna().sum()
+        total = int(counts.sum())
+        report = counts.rename("nulls").reset_index()
+        report.columns = ["column", "nulls"]
+        print(tabulate(report, headers="keys", tablefmt="github",
+                       showindex=False))
+        print(f"\033[1m→ total nulls: {total} across {len(self.df)} rows\033[0m")
+        if plot:
+            fig, ax = plt.subplots(figsize=(8, 4))
+            ax.bar(counts.index.astype(str), counts.values)
+            ax.set_title("Missing values per column")
+            ax.set_ylabel("nulls")
+            plt.xticks(rotation=45, ha="right")
+            self._fig = fig
+        return self
+
+    def to_float(self, *cols):
+        """Convert string/object column(s) to float.
+
+        Named columns: ``.to_float("price", "qty")``. With no arguments, every
+        object/string column is coerced: ``.to_float()``. Unparseable values
+        become NaN (``errors="coerce"``).
+        """
+        targets = list(cols) if cols else list(
+            self.df.select_dtypes(include="object").columns)
+        for c in targets:
+            self.df[c] = pd.to_numeric(self.df[c], errors="coerce")
         return self
 
     # -------------------------------------------------------------- FILTER
@@ -270,7 +342,8 @@ class Data:
 
     # ----------------------------------------------------------- DUNDERS
     def __repr__(self):
-        return f"Data(shape={self.df.shape})"
+        cols = ", ".join(map(str, self.df.columns)) if len(self.df.columns) else "-"
+        return f"dclean.Data({self.df.shape[0]}×{self.df.shape[1]}, cols=[{cols}])"
 
     def __len__(self):
         return len(self.df)
